@@ -22,7 +22,8 @@ pACooldown = 2000
 mACooldown = 1000
 pATimer = 0
 mATimer = 0
-coins = []
+coinVal = random.randint(1,10)
+coins = 0
 
 # Load all images - main.py - Andrew
 mList = ["ghost.png", "skeleton.png", "slime.png", "goblin.png"]
@@ -34,12 +35,13 @@ bImg = pygame.image.load("floor.png")
 bImg = pygame.transform.scale(bImg, (W, H))
 wImg = pygame.image.load("wall.png")
 wImg = pygame.transform.scale(wImg, (W, H))
+cImg = pygame.image.load("coins.png")
+cImg = pygame.transform.scale(cImg, (50, 50))
 
 
 def attack(pAttack):
     damage = pAttack
     return damage
-
 
 def block(pDefense, incDamage):
     pDamage = max(0, incDamage - pDefense)
@@ -310,6 +312,8 @@ def main():
     mACooldown = 200000
     pATimer = 0
     mATimer = 0
+    coinVal = random.randint(1, 10)
+    coins = 0
 
     mList = ["ghost.png", "skeleton.png", "slime.png", "goblin.png"]
     mImg = pygame.image.load(random.choice(mList))
@@ -339,8 +343,15 @@ def main():
     clock = pygame.time.Clock()
 
     # Added monster x, and y from main.py
+    mDead = False
     monster_x = random.randint(0, W - mSize)
     monster_y = random.randint(0, H - mSize)
+
+    coin = None
+    def spawnCoin():
+        nonlocal coin
+        coin = cImg.get_rect()
+        coin.topleft = (monster_x + 50, monster_y + 50)
 
     running = True
     while running:
@@ -351,14 +362,15 @@ def main():
         player_y = player.rect.topleft[1]
 
         # Monster Movement
-        if monster_x < player_x:
-            monster_x += mSpeed
-        elif monster_x > player_x:
-            monster_x -= mSpeed
-        if monster_y < player_y:
-            monster_y += mSpeed
-        elif monster_y > player_y:
-            monster_y -= mSpeed
+        if not mDead:
+            if monster_x < player_x:
+                monster_x += mSpeed
+            elif monster_x > player_x:
+                monster_x -= mSpeed
+            if monster_y < player_y:
+                monster_y += mSpeed
+            elif monster_y > player_y:
+                monster_y -= mSpeed
 
         keys = pygame.key.get_pressed()
 
@@ -399,7 +411,7 @@ def main():
         currTime = pygame.time.get_ticks()
         pATimer += currTime
         mATimer += currTime
-        if playerRect.colliderect(monsterRect):
+        if playerRect.colliderect(monsterRect) and not mDead:
             if mATimer >= mACooldown:
                 if not keys[pygame.K_h]:
                     pHealth -= 10
@@ -412,29 +424,36 @@ def main():
                 print("Game Over - Player defeated!")
                 running = False
             elif mHealth <= 0:
-                running = False
+                spawnCoin()
+                mDead = True
+        if coin and playerRect.colliderect(coin):
+            coin = None
+            coins += coinVal
 
         # commented out which would draw the square representing the Player class instance
         # movingsprites.draw(screen)
         walls.draw(screen)
         pygame.display.flip()
         if (Player.room_changed == True):
+            mHealth = 50
             mImg = pygame.image.load(random.choice(mList))
             mImg = pygame.transform.scale(mImg, (mSize, mSize))
             monster_x = random.randint(0, W - mSize)
             monster_y = random.randint(0, H - mSize)
 
-        def drawCoins(screen):
-            for coin in coins:
-                screen.blit(coin.image, (coin.x, coin.y))
-
         Player.room_changed = False
         # Draw everything
         screen.blit(bImg, (0, 0))
         screen.blit(pImg, (player.rect.topleft[0], player.rect.topleft[1]))
-        screen.blit(mImg, (monster_x, monster_y))
         drawHealthBar(screen, player.rect.topleft[0], player.rect.topleft[1], pHealth, 100, pHColor)
-        drawHealthBar(screen, monster_x, monster_y, mHealth, 50, mHColor)
+        if coin:
+            screen.blit(cImg, coin)
+        font = pygame.font.Font(None, 36)
+        text = font.render(f"Coins: {coins}", True, (255, 215, 0))
+        screen.blit(text, (20, 20))
+        if not mDead:
+            screen.blit(mImg, (monster_x, monster_y))
+            drawHealthBar(screen, monster_x, monster_y, mHealth, 50, mHColor)
 
 
 # This calls the 'main' function when this script is executed
