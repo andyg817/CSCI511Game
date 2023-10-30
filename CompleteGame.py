@@ -435,6 +435,7 @@ def main():
         walls.draw(screen)
         pygame.display.flip()
         if (Player.room_changed == True):
+            mDead = False
             mHealth = 50
             mImg = pygame.image.load(random.choice(mList))
             mImg = pygame.transform.scale(mImg, (mSize, mSize))
