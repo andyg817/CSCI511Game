@@ -40,7 +40,6 @@ wImg = pygame.transform.scale(wImg, (W, H))
 cImg = pygame.image.load("coins.png")
 cImg = pygame.transform.scale(cImg, (50, 50))
 
-
 # Create a function for rendering text objects
 def text_objects(text, font, color):
     textSurface = font.render(text, True, color)
@@ -85,39 +84,11 @@ def paused(gameDisplay):
                 if event.key == pygame.K_p:
                     continue_button = True
 
-        if continue_button: # Set pause to False to continue the game
-
-            pause = False 
-        pygame.display.update()
-        #clock.tick(15)
-
-#Timed Events
-def timed_event(gameDisplay):
-    pause = True
-    while pause:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                quit()
-
-        gameDisplay.fill(grey)
-        largeText = pygame.font.SysFont("comicsansms", 50)
-        TextSurf, TextRect = text_objects("You have come across a strange stone, do you want to pick it up?", largeText, (0, 0, 0))
-        TextRect.center = (W // 2, H // 2)
-        gameDisplay.blit(TextSurf, TextRect)
-
-        yes_button = button("Yes", 150, 450, 100, 50, white, black, gameDisplay)
-        no_button = button("No", 350, 650, 100, 50, white, black, gameDisplay)
-
-        for event in pygame.event.get():
-            if event.type == KEYDOWN:
-                if event.key == pygame.K_p:
-                    continue_button = True
-
-        if yes_button:
+        if continue_button:
             pause = False  # Set pause to False to continue the game
 
         pygame.display.update()
+        #clock.tick(15)
 
 def attack(pAttack):
     damage = pAttack
@@ -402,10 +373,6 @@ def main():
     coinVal = random.randint(1, 10)
     coins = 0
 
-    #for timed events
-    timer_duration = random.randint(10000, 30000)  # Random time between 10 to 30 seconds
-    start_time = pygame.time.get_ticks()
-
     mList = ["ghost.png", "skeleton.png", "slime.png", "goblin.png"]
     mImg = pygame.image.load(random.choice(mList))
     mImg = pygame.transform.scale(mImg, (mSize, mSize))
@@ -454,12 +421,6 @@ def main():
             file1.write(Player.direction)
             Player.direction = ""
             file1.close()
-
-        # Check for the event that triggers the timed event randomly
-        if pygame.time.get_ticks() - start_time > timer_duration:
-            timed_event(screen)
-            start_time = pygame.time.get_ticks()
-            timer_duration = random.randint(5000, 20000)  # Reset the timer for the next random event
 
         # getting the current player x and y
         player_x = player.rect.topleft[0]
