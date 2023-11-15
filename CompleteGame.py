@@ -9,7 +9,7 @@ grey = (120, 120, 120)
 # Constants from main.py - Andrew
 W, H = 800, 600
 pSize = 50
-pSpeed = 2
+pSpeed = 5
 pHealth = 100
 pAttack = 10
 pDefense = 5
@@ -22,17 +22,22 @@ pACooldown = 2000
 mACooldown = 1000
 pATimer = 0
 mATimer = 0
+dHelath = 200
 coinVal = random.randint(1,10)
 coins = 0
 
 # Load all images - main.py - Andrew
-mList = ["ghost.png", "skeleton.png", "slime.png", "goblin.png"]
+mList = ["ghost.png", "skeleton.png", "slime.png", "goblin.png", "zombie.png", "spider.png"]
 mImg = pygame.image.load(random.choice(mList))
 mImg = pygame.transform.scale(mImg, (mSize, mSize))
 pImg = pygame.image.load("player.png")
 pImg = pygame.transform.scale(pImg, (pSize, pSize))
+prImg = pygame.image.load("princess.png")
+prImg = pygame.transform.scale(prImg, (pSize, pSize))
 bImg = pygame.image.load("floor.png")
 bImg = pygame.transform.scale(bImg, (W, H))
+drImg = pygame.image.load("droom.png")
+drImg = pygame.transform.scale(drImg, (W, H))
 wImg = pygame.image.load("wall.png")
 wImg = pygame.transform.scale(wImg, (W, H))
 cImg = pygame.image.load("coins.png")
@@ -54,6 +59,10 @@ def drawHealthBar(surface, x, y, currHealth, maxHealth, color):
     monsterHealthRect = pygame.Rect(x, y, bar_width, 8)
     pygame.draw.rect(surface, color, monsterHealthRect)
 
+def drawDHealthBar(surface, x, y, currHealth, maxHealth, color):
+    dwidth = int((currHealth / maxHealth) * 200)
+    dragonHealthRect = pygame.Rect(x, y, dwidth, 8)
+    pygame.draw.rect(surface, color, dragonHealthRect)
 
 # Define an empty list to hold room information--------------------------------------------------------------------
 room_list = []
@@ -152,13 +161,9 @@ def generate_room(room):
         wall_list.append(Wall(20, 790, 20, 580))
         wall_list.append(Wall(600, 20, 780, 0))
 
-        # top wall with door
-        wall_list.append(Wall(20, 340, 20, 0))
-        wall_list.append(Wall(20, 360, 460, 0))
+        wall_list.append(Wall(20, 790, 20, 0))
 
-        # left wall with door
-        wall_list.append(Wall(590, 20, 0, 360))
-        wall_list.append(Wall(240, 20, 0, 20))
+        wall_list.append(Wall(600, 20, 0, 0))
 
     # 8
     elif room % 10 == 9:
@@ -299,25 +304,29 @@ def main():
     # Constants from main.py - Andrew
     W, H = 800, 600
     pSize = 50
-    pSpeed = 2
+    pSpeed = 5
     pHealth = 100
     pAttack = 10
     pDefense = 5
     pHColor = (0, 255, 0)  # Green
     mSize = 50
     mSpeed = 1
+    dSpeed = .5
     mHealth = 50
     mHColor = (255, 0, 0)  # Red
     pACooldown = 90000
     mACooldown = 200000
     pATimer = 0
     mATimer = 0
+    dHealth = 200
     coinVal = random.randint(1, 10)
     coins = 0
 
-    mList = ["ghost.png", "skeleton.png", "slime.png", "goblin.png"]
+    mList = ["ghost.png", "skeleton.png", "slime.png", "goblin.png", "zombie.png", "spider.png"]
     mImg = pygame.image.load(random.choice(mList))
     mImg = pygame.transform.scale(mImg, (mSize, mSize))
+    dImg = pygame.image.load("dragon.png")
+    dImg = pygame.transform.scale(dImg, (100, 100))
 
     # Call this function so the Pygame library can initialize itself
     pygame.init()
@@ -347,11 +356,21 @@ def main():
     monster_x = random.randint(0, W - mSize)
     monster_y = random.randint(0, H - mSize)
 
+    dDead = False
+    dragon_x = random.randint(0, W - 100)
+    dragon_y = random.randint(0, H - 100)
+
     coin = None
     def spawnCoin():
         nonlocal coin
         coin = cImg.get_rect()
         coin.topleft = (monster_x + 50, monster_y + 50)
+
+    princess = None
+    def spawnPrincess():
+        nonlocal princess
+        princess = prImg.get_rect()
+        princess.topleft = (dragon_x, dragon_y)
 
     running = True
     while running:
@@ -381,23 +400,23 @@ def main():
             # Player Movement
             if event.type == KEYDOWN:
                 if event.key == K_LEFT:
-                    player.changespeed(-3, 0)
+                    player.changespeed(-5, 0)
                 if event.key == K_RIGHT:
-                    player.changespeed(3, 0)
+                    player.changespeed(5, 0)
                 if event.key == K_UP:
-                    player.changespeed(0, -3)
+                    player.changespeed(0, -5)
                 if event.key == K_DOWN:
-                    player.changespeed(0, 3)
+                    player.changespeed(0, 5)
 
             if event.type == KEYUP:
                 if event.key == K_LEFT:
-                    player.changespeed(3, 0)
+                    player.changespeed(5, 0)
                 if event.key == K_RIGHT:
-                    player.changespeed(-3, 0)
+                    player.changespeed(-5, 0)
                 if event.key == K_UP:
-                    player.changespeed(0, 3)
+                    player.changespeed(0, 5)
                 if event.key == K_DOWN:
-                    player.changespeed(0, -3)
+                    player.changespeed(0, -5)
 
         player.update(walls)
         walls = pygame.sprite.RenderPlain(generate_room(player.current_room))
@@ -425,6 +444,7 @@ def main():
                 running = False
             elif mHealth <= 0:
                 spawnCoin()
+                coinVal = random.randint(1, 10)
                 mDead = True
         if coin and playerRect.colliderect(coin):
             coin = None
@@ -442,6 +462,40 @@ def main():
             monster_x = random.randint(0, W - mSize)
             monster_y = random.randint(0, H - mSize)
 
+        dragonRect = pygame.Rect(dragon_x, dragon_y, 200, 200)
+        if (player.current_room == 1):
+            dImg = pygame.image.load("dragon.png")
+            dImg = pygame.transform.scale(dImg, (200, 200))
+            if not dDead:
+                if dragon_x < player_x:
+                    dragon_x += dSpeed
+                elif monster_x > player_x:
+                    dragon_x -= dSpeed
+                if dragon_y < player_y:
+                    dragon_y += dSpeed
+                elif dragon_y > player_y:
+                    dragon_y -= dSpeed
+
+            if playerRect.colliderect(dragonRect) and not dDead:
+                if mATimer >= mACooldown:
+                    if not keys[pygame.K_h]:
+                        pHealth -= 10
+                    mATimer = 0
+                if pATimer >= pACooldown:
+                    if keys[pygame.K_g]:
+                        dHealth -= 10
+                    pATimer = 0
+                if pHealth <= 0:
+                    print("Game Over - Player defeated!")
+                    running = False
+                elif dHealth <= 0:
+                    spawnPrincess()
+                    dDead = True
+        if princess and playerRect.colliderect(princess):
+            print("Congratulations you saved the princess!")
+            running = False
+
+
         Player.room_changed = False
         # Draw everything
         screen.blit(bImg, (0, 0))
@@ -455,6 +509,19 @@ def main():
         if not mDead:
             screen.blit(mImg, (monster_x, monster_y))
             drawHealthBar(screen, monster_x, monster_y, mHealth, 50, mHColor)
+        if player.current_room == 1:
+            mDead = True
+            screen.blit(drImg, (0, 0))
+            screen.blit(pImg, (player.rect.topleft[0], player.rect.topleft[1]))
+            drawHealthBar(screen, player.rect.topleft[0], player.rect.topleft[1], pHealth, 100, pHColor)
+            font = pygame.font.Font(None, 36)
+            text = font.render(f"Coins: {coins}", True, (255, 215, 0))
+            if (dDead == False):
+                screen.blit(text, (20, 20))
+                screen.blit(dImg, (dragon_x, dragon_y))
+                drawDHealthBar(screen, dragon_x, dragon_y, dHealth, 200, mHColor)
+            if princess:
+                screen.blit(prImg, princess)
 
 
 # This calls the 'main' function when this script is executed
