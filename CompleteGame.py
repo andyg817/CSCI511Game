@@ -5,6 +5,8 @@ from pygame.locals import *
 black = (0, 0, 0)
 white = (255, 255, 255)
 grey = (120, 120, 120)
+green = (0, 255, 0)
+bright_green = (0, 200, 0)
 
 # Constants from main.py - Andrew
 W, H = 800, 600
@@ -43,6 +45,120 @@ wImg = pygame.transform.scale(wImg, (W, H))
 cImg = pygame.image.load("coins.png")
 cImg = pygame.transform.scale(cImg, (50, 50))
 
+# Create a function for rendering text objects
+def text_objects(text, font, color):
+    textSurface = font.render(text, True, color)
+    return textSurface, textSurface.get_rect()
+
+# Create a function for buttons
+def button(msg, x, y, w, h, ic, ac, gameDisplay):
+    mouse = pygame.mouse.get_pos()
+    click = pygame.mouse.get_pressed()
+
+    if x + w > mouse[0] > x and y + h > mouse[1] > y:
+        pygame.draw.rect(gameDisplay, ac, (x, y, w, h))
+        if click[0] == 1:
+            return True
+    else:
+        pygame.draw.rect(gameDisplay, ic, (x, y, w, h))
+
+    smallText = pygame.font.Font(None, 20)
+    textSurf, textRect = text_objects(msg, smallText, (0, 0, 0))
+    textRect.center = (x + w // 2, y + h // 2)
+    gameDisplay.blit(textSurf, textRect)
+
+def message_button(msg, x, y, w, h, ic, ac, gameDisplay):
+    mouse = pygame.mouse.get_pos()
+    click = pygame.mouse.get_pressed()
+
+    if x + w > mouse[0] > x and y + h > mouse[1] > y:
+        pygame.draw.rect(gameDisplay, ac, (x, y, w, h))
+        if click[0] == 1:
+            return True
+    else:
+        pygame.draw.rect(gameDisplay, ic, (x, y, w, h))
+
+    smallText = pygame.font.Font(None, 20)
+    textSurf, textRect = text_objects(msg, smallText, (0, 0, 0))
+    textRect.center = (x + w // 2, y + h // 2)
+    gameDisplay.blit(textSurf, textRect)
+
+    return False  # Return False if the button is not clicked
+
+# Create a function for the "Paused" state
+def paused(gameDisplay):
+    pause = True
+    while pause:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+
+        gameDisplay.fill(grey)
+        largeText = pygame.font.SysFont("comicsansms", 115)
+        TextSurf, TextRect = text_objects("Paused", largeText, (0, 0, 0))
+        TextRect.center = (W // 2, H // 2)
+        gameDisplay.blit(TextSurf, TextRect)
+
+        continue_button = button("Continue", 150, 450, 100, 50, white, black, gameDisplay)
+
+        for event in pygame.event.get():
+            if event.type == KEYDOWN:
+                if event.key == pygame.K_p:
+                    continue_button = True
+
+        if continue_button:
+            pause = False  # Set pause to False to continue the game
+
+        pygame.display.update()
+        #clock.tick(15)
+
+def timedEvent(gameDisplay):
+    messages = ["Do something!", "What's your move?", "Make a choice!"]
+    random_message = random.choice(messages)
+
+    smallText = pygame.font.Font(None, 30)
+    textSurf, textRect = text_objects(random_message, smallText, (0, 0, 0))
+    textRect.center = (W // 2, H // 2 - 50)
+    gameDisplay.blit(textSurf, textRect)
+
+    # Display buttons
+    button_width = 100
+    button_height = 50
+    button_gap = 20
+    button_x = (W - button_width * 3 - button_gap * 2) // 2
+    button_y = H // 2
+
+    option1_button = message_button("Option 1", button_x, button_y, button_width, button_height, white, black, gameDisplay)
+    option2_button = message_button("Option 2", button_x + button_width + button_gap, button_y, button_width, button_height, white, black, gameDisplay)
+    option3_button = message_button("Option 3", button_x + 2 * (button_width + button_gap), button_y, button_width, button_height, white, black, gameDisplay)
+
+    pygame.display.update()
+
+    # Wait for user input
+    waiting_for_input = True
+    while waiting_for_input:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+        option1_button = message_button("Option 1", button_x, button_y, button_width, button_height, white, black, gameDisplay)
+        option2_button = message_button("Option 2", button_x + button_width + button_gap, button_y, button_width, button_height, white, black, gameDisplay)
+        option3_button = message_button("Option 3", button_x + 2 * (button_width + button_gap), button_y, button_width, button_height, white, black, gameDisplay)
+        
+        pygame.display.update()
+
+        if option1_button:
+            print("Option 1 selected")
+            waiting_for_input = False
+        elif option2_button:
+            print("Option 2 selected")
+            waiting_for_input = False
+        elif option3_button:
+            print("Option 3 selected")
+            waiting_for_input = False
+
+        pygame.display.update()
 
 def attack(pAttack):
     damage = pAttack
@@ -223,6 +339,9 @@ class Wall(pygame.sprite.Sprite):
 class Player(pygame.sprite.Sprite):
     room_changed = False
 
+    #Room changed direction
+    direction = ""
+
     # Constructor function
     def __init__(self, x, y, w, h, vel, scale_factor=3):
         # Call the parent's constructor
@@ -277,18 +396,22 @@ class Player(pygame.sprite.Sprite):
             self.rect.topleft = (20, new_y)
             self.current_room = self.current_room + 1
             Player.room_changed = True
+            Player.direction = "r"
         elif new_y > 600:
             self.rect.topleft = (new_x, 20)
             self.current_room = self.current_room + 10
             Player.room_changed = True
+            Player.direction = "d"
         elif new_x < 0:
             self.rect.topleft = (790, new_y)
             self.current_room = self.current_room - 1
             Player.room_changed = True
+            Player.direction = "l"
         elif new_y < 0:
             self.rect.topleft = (new_x, 590)
             self.current_room = self.current_room - 10
             Player.room_changed = True
+            Player.direction = "u"
 
 
 player_x, player_y = 350, 250
@@ -376,6 +499,13 @@ def main():
     while running:
         clock.tick(40)
 
+        #communication
+        if(Player.direction != ""):
+            file1 = open("communication.txt", "w")
+            file1.write(Player.direction)
+            Player.direction = ""
+            file1.close()
+
         # getting the current player x and y
         player_x = player.rect.topleft[0]
         player_y = player.rect.topleft[1]
@@ -407,7 +537,11 @@ def main():
                     player.changespeed(0, -5)
                 if event.key == K_DOWN:
                     player.changespeed(0, 5)
-
+                if event.key == pygame.K_p:
+                    paused(screen)
+                if event.key == pygame.K_e:
+                    timedEvent(screen)
+                    
             if event.type == KEYUP:
                 if event.key == K_LEFT:
                     player.changespeed(5, 0)
