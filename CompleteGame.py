@@ -129,10 +129,6 @@ def timedEvent(gameDisplay):
     button_x = (W - button_width * 3 - button_gap * 2) // 2
     button_y = H // 2
 
-    option1_button = message_button("Option 1", button_x, button_y, button_width, button_height, white, black, gameDisplay)
-    option2_button = message_button("Option 2", button_x + button_width + button_gap, button_y, button_width, button_height, white, black, gameDisplay)
-    option3_button = message_button("Option 3", button_x + 2 * (button_width + button_gap), button_y, button_width, button_height, white, black, gameDisplay)
-
     pygame.display.update()
 
     # Wait for user input
@@ -160,6 +156,53 @@ def timedEvent(gameDisplay):
 
         pygame.display.update()
 
+def difficulty(gameDisplay):
+    diff = ""
+    messages = ["Choose the Difficulty"]
+    random_message = random.choice(messages)
+
+    smallText = pygame.font.Font(None, 30)
+    textSurf, textRect = text_objects(random_message, smallText, (0, 0, 0))
+    textRect.center = (W // 2, H // 2 - 50)
+    gameDisplay.blit(textSurf, textRect)
+
+    # Display buttons
+    button_width = 100
+    button_height = 50
+    button_gap = 20
+    button_x = (W - button_width * 3 - button_gap * 2) // 2
+    button_y = H // 2
+
+    pygame.display.update()
+
+    # Wait for user input
+    waiting_for_input = True
+    while waiting_for_input:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+        option1_button = message_button("Easy", button_x, button_y, button_width, button_height, white, black, gameDisplay)
+        option2_button = message_button("Medium", button_x + button_width + button_gap, button_y, button_width, button_height, white, black, gameDisplay)
+        option3_button = message_button("Hard", button_x + 2 * (button_width + button_gap), button_y, button_width, button_height, white, black, gameDisplay)
+        
+        pygame.display.update()
+
+        if option1_button:
+            print("Option 1 selected")
+            diff = "1"
+            waiting_for_input = False
+        elif option2_button:
+            print("Option 2 selected")
+            diff = "2"
+            waiting_for_input = False
+        elif option3_button:
+            print("Option 3 selected")
+            diff = "3"
+            waiting_for_input = False
+
+        pygame.display.update()
+    return diff
 def attack(pAttack):
     damage = pAttack
     return damage
@@ -445,6 +488,9 @@ def main():
     coinVal = random.randint(1, 10)
     coins = 0
 
+    #difficulty Variable
+    diff = ""
+
     mList = ["ghost.png", "skeleton.png", "slime.png", "goblin.png", "zombie.png", "spider.png"]
     mImg = pygame.image.load(random.choice(mList))
     mImg = pygame.transform.scale(mImg, (mSize, mSize))
@@ -541,6 +587,8 @@ def main():
                     paused(screen)
                 if event.key == pygame.K_e:
                     timedEvent(screen)
+                if event.key == pygame.K_i:
+                    diff = difficulty(screen)
                     
             if event.type == KEYUP:
                 if event.key == K_LEFT:
