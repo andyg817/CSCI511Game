@@ -44,6 +44,8 @@ wImg = pygame.image.load("wall.png")
 wImg = pygame.transform.scale(wImg, (W, H))
 cImg = pygame.image.load("coins.png")
 cImg = pygame.transform.scale(cImg, (50, 50))
+powerImg = pygame.image.load("powerup.png")
+powerImg = pygame.transform.scale(powerImg, (50, 50))
 
 # Create a function for rendering text objects
 def text_objects(text, font, color):
@@ -487,6 +489,13 @@ def main():
     dHealth = 200
     coinVal = random.randint(1, 10)
     coins = 0
+    chestSize = 50
+    chestSpeed = 0
+    chestHealth = 10
+    chestHColor = (255, 0, 0)
+    chestACooldown = 200000
+    chestATimer = 0
+    heals = 3
 
     #difficulty Variable
     diff = ""
@@ -496,6 +505,9 @@ def main():
     mImg = pygame.transform.scale(mImg, (mSize, mSize))
     dImg = pygame.image.load("dragon.png")
     dImg = pygame.transform.scale(dImg, (100, 100))
+    chestList = ["chest.png"]
+    chestImg = pygame.image.load(random.choice(chestList))
+    chestImg = pygame.transform.scale(chestImg, (chestSize, chestSize))
 
     # Call this function so the Pygame library can initialize itself
     pygame.init()
@@ -522,8 +534,11 @@ def main():
 
     # Added monster x, and y from main.py
     mDead = False
+    chestDead = False
     monster_x = random.randint(0, W - mSize)
     monster_y = random.randint(0, H - mSize)
+    chest_x = random.randint(0, W - chestSize)
+    chest_y = random.randint(0, H - chestSize)
 
     dDead = False
     dragon_x = random.randint(0, W - 100)
@@ -540,6 +555,12 @@ def main():
         nonlocal princess
         princess = prImg.get_rect()
         princess.topleft = (dragon_x, dragon_y)
+
+    powerup = None
+    def spawn_speed_powerup():
+        nonlocal powerup
+        powerup = powerImg.get_rect()
+        powerup.topleft = (monster_x + 50, monster_y + 50)
 
     running = True
     while running:
@@ -599,6 +620,9 @@ def main():
                     player.changespeed(0, 5)
                 if event.key == K_DOWN:
                     player.changespeed(0, -5)
+                if event.key == K_r and heals > 0:
+                    pHealth = 100
+                    heals -= 1
 
         player.update(walls)
         walls = pygame.sprite.RenderPlain(generate_room(player.current_room))
@@ -608,6 +632,7 @@ def main():
         # Check for collision
         playerRect = pygame.Rect(player.rect.topleft[0], player.rect.topleft[1], pSize, pSize)
         monsterRect = pygame.Rect(monster_x, monster_y, mSize, mSize)
+        chestRect = pygame.Rect(chest_x, chest_y, chestSize, chestSize)
 
         currTime = pygame.time.get_ticks()
         pATimer += currTime
@@ -632,6 +657,25 @@ def main():
             coin = None
             coins += coinVal
 
+        if playerRect.colliderect(chestRect) and not chestDead:
+            if chestATimer >= chestACooldown:
+                if not keys[pygame.K_h]:
+                    pHealth -= 1
+                chestATimer = 0
+            if pATimer >= pACooldown:
+                if keys[pygame.K_g]:
+                    chestHealth -= 15
+                pATimer = 0
+            if pHealth <= 0:
+                print("Game Over - Player defeated!")
+                running = False
+            elif chestHealth <= 0:
+                spawn_speed_powerup()
+                chestDead = True
+        if powerup and playerRect.colliderect(powerup):
+            powerup = None
+            pAttack += 20
+
         # commented out which would draw the square representing the Player class instance
         # movingsprites.draw(screen)
         walls.draw(screen)
@@ -643,6 +687,11 @@ def main():
             mImg = pygame.transform.scale(mImg, (mSize, mSize))
             monster_x = random.randint(0, W - mSize)
             monster_y = random.randint(0, H - mSize)
+            chestHealth = 10
+            chestImg = pygame.image.load(random.choice(chestList))
+            chestImg = pygame.transform.scale(mImg, (chestSize, chestSize))
+            chest_x = random.randint(0, W - chestSize)
+            chest_y = random.randint(0, H - chestSize)
 
         dragonRect = pygame.Rect(dragon_x, dragon_y, 200, 200)
         if (player.current_room == 1):
@@ -704,6 +753,22 @@ def main():
                 drawDHealthBar(screen, dragon_x, dragon_y, dHealth, 200, mHColor)
             if princess:
                 screen.blit(prImg, princess)
+
+        if powerup and chestDead:
+            screen.blit(powerImg, powerup)
+        font = pygame.font.Font(None, 36)
+        text = font.render(f"Power: {pAttack}", True, (255, 0, 0))
+        screen.blit(text, (20, 40))
+        if not mDead:
+            screen.blit(mImg, (monster_x, monster_y))
+            drawHealthBar(screen, monster_x, monster_y, mHealth, 50, mHColor)
+        if not chestDead:
+            screen.blit(chestImg, (chest_x, chest_y))
+            drawHealthBar(screen, chest_x, chest_y, chestHealth, 10, chestHColor)
+
+        font = pygame.font.Font(None, 36)
+        text = font.render(f"Heals: {heals}", True, (0, 255, 0))
+        screen.blit(text, (20, 60))
 
 
 # This calls the 'main' function when this script is executed
