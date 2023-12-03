@@ -116,11 +116,39 @@ def paused(gameDisplay):
         #clock.tick(15)
 
 def timedEvent(gameDisplay):
-    messages = ["Do something!", "What's your move?", "Make a choice!"]
-    random_message = random.choice(messages)
+    random_num = random.randint(1, 4)
+    option1 = ""
+    option2 = ""
+    message = ""
+    event_number = 0
+
+    #Event1
+    if(random_num == 1):
+        message = "A sound echoes through the dungeon. Do you want to investigate?"
+        option1 = "Yes, let's investigate"
+        option2 = "Wait, a minute."
+
+    #Event2
+    if(random_num == 2):
+        message = "You found a hole in the ground. Do you want to enter it?"
+        option1 = "Jump In"
+        option2 = "No, you mad??"
+
+
+    #Event3
+    if(random_num == 3):
+        message = "You found a strange vial wiht a liquid in it."
+        option1 = "Drink it"
+        option2 = "Throw it away"
+
+    #Event4
+    if(random_num == 4):
+        message = "You come across a strange statue. It seems like it's looking at you"
+        option1 = "Destroy It"
+        option2 = "Pick it up"
 
     smallText = pygame.font.Font(None, 30)
-    textSurf, textRect = text_objects(random_message, smallText, (0, 0, 0))
+    textSurf, textRect = text_objects(message, smallText, (0, 0, 0))
     textRect.center = (W // 2, H // 2 - 50)
     gameDisplay.blit(textSurf, textRect)
 
@@ -140,32 +168,54 @@ def timedEvent(gameDisplay):
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-        option1_button = message_button("Option 1", button_x, button_y, button_width, button_height, white, black, gameDisplay)
-        option2_button = message_button("Option 2", button_x + button_width + button_gap, button_y, button_width, button_height, white, black, gameDisplay)
-        option3_button = message_button("Option 3", button_x + 2 * (button_width + button_gap), button_y, button_width, button_height, white, black, gameDisplay)
+
+        option1_button = message_button(option1, button_x, button_y, button_width, button_height, white, black, gameDisplay)
+        option2_button = message_button(option2, button_x + button_width + button_gap, button_y, button_width, button_height, white, black, gameDisplay)
+        option3_button = message_button("Do nothing", button_x + 2 * (button_width + button_gap), button_y, button_width, button_height, white, black, gameDisplay)
         
         pygame.display.update()
 
         if option1_button:
             print("Option 1 selected")
+            event_number = event_number + 1
             waiting_for_input = False
         elif option2_button:
             print("Option 2 selected")
+            event_number = event_number + 2
             waiting_for_input = False
         elif option3_button:
             print("Option 3 selected")
+            event_number = 0
+            ebent_number = event_number + 3
             waiting_for_input = False
 
         pygame.display.update()
+    return event_number
 
 def difficulty(gameDisplay):
     diff = ""
+    gameDisplay.blit(bImg, (0, 0))
     messages = ["Choose the Difficulty"]
     random_message = random.choice(messages)
-
+    instructions = "Movement: <- ^ v -> \n Attack: G \n Heal: R \n Pause: P"
     smallText = pygame.font.Font(None, 30)
+
+    #Difficulty Message
     textSurf, textRect = text_objects(random_message, smallText, (0, 0, 0))
-    textRect.center = (W // 2, H // 2 - 50)
+    textRect.center = (W // 2, H // 2 - 100)
+
+    #Instructions Message
+    textSurf1, textRect1 = text_objects(instructions, smallText, (0, 0, 0))
+    textRect1.center = (W // 2, 500)
+
+    gameDisplay.blit(textSurf, textRect)
+    # Instructions Message
+    lines = instructions.split('\n')
+    for i, line in enumerate(lines):
+        textSurf_line, textRect_line = text_objects(line, smallText, (0, 0, 0))
+        textRect_line.center = (W // 2, 400 + i * 30)  # Adjust the vertical spacing
+        gameDisplay.blit(textSurf_line, textRect_line)
+
     gameDisplay.blit(textSurf, textRect)
 
     # Display buttons
@@ -191,15 +241,12 @@ def difficulty(gameDisplay):
         pygame.display.update()
 
         if option1_button:
-            print("Option 1 selected")
             diff = "1"
             waiting_for_input = False
         elif option2_button:
-            print("Option 2 selected")
             diff = "2"
             waiting_for_input = False
         elif option3_button:
-            print("Option 3 selected")
             diff = "3"
             waiting_for_input = False
 
@@ -361,10 +408,6 @@ def generate_room(room):
 
     return wall_list
 
-# Create some initial rooms
-# for _ in range(5):
-# room = generate_random_room()
-# room_list.append(room)
 
 # This class represents the bar at the bottom that the player controls
 class Wall(pygame.sprite.Sprite):
@@ -530,6 +573,24 @@ def main():
 
     walls = pygame.sprite.RenderPlain(generate_room(player.current_room))
 
+
+    #INITIAL SCREEN WITH DIFFICLTY SELECTION
+    diff = difficulty(screen)
+
+    if(diff == "1"):
+        print("Easy Mode Selected")
+        mSpeed = 0.70
+        pHealth = 150
+        
+    elif(diff == "2"):
+        #Default Difficulty, no changes to game values will be made
+        print("Medium Mode Selected")
+    else:
+        print("Hard Mode Selected")
+        mSpeed = 2
+        pHealth = 70
+
+
     clock = pygame.time.Clock()
 
     # Added monster x, and y from main.py
@@ -608,8 +669,6 @@ def main():
                     paused(screen)
                 if event.key == pygame.K_e:
                     timedEvent(screen)
-                if event.key == pygame.K_i:
-                    diff = difficulty(screen)
                     
             if event.type == KEYUP:
                 if event.key == K_LEFT:
