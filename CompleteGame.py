@@ -1,6 +1,8 @@
 import random
 import pygame
 from pygame.locals import *
+import time
+import threading
 
 black = (0, 0, 0)
 white = (255, 255, 255)
@@ -46,6 +48,21 @@ cImg = pygame.image.load("coins.png")
 cImg = pygame.transform.scale(cImg, (50, 50))
 powerImg = pygame.image.load("powerup.png")
 powerImg = pygame.transform.scale(powerImg, (50, 50))
+
+#Thread for file update
+def file_writer():
+    while True:
+        with open('communication.txt', 'r') as file:
+            data = file.read()
+
+        if data == "locked":
+            continue
+
+        else:
+            with open('communication.txt', 'w') as update_file:
+                update_file.write(Player.direction)
+            Player.direction = ""
+            break
 
 # Create a function for rendering text objects
 def text_objects(text, font, color):
@@ -125,14 +142,16 @@ def timedEvent(gameDisplay):
     #Event1
     if(random_num == 1):
         message = "A sound echoes through the dungeon. Do you want to investigate?"
-        option1 = "Yes, let's investigate"
+        option1 = "Yes, let's go."
         option2 = "Wait, a minute."
+        event_number = 10
 
     #Event2
     if(random_num == 2):
         message = "You found a hole in the ground. Do you want to enter it?"
         option1 = "Jump In"
         option2 = "No, you mad??"
+        event_number = 20
 
 
     #Event3
@@ -140,12 +159,14 @@ def timedEvent(gameDisplay):
         message = "You found a strange vial wiht a liquid in it."
         option1 = "Drink it"
         option2 = "Throw it away"
+        event_number = 30
 
     #Event4
     if(random_num == 4):
         message = "You come across a strange statue. It seems like it's looking at you"
         option1 = "Destroy It"
         option2 = "Pick it up"
+        event_number = 40
 
     smallText = pygame.font.Font(None, 30)
     textSurf, textRect = text_objects(message, smallText, (0, 0, 0))
@@ -459,6 +480,11 @@ class Player(pygame.sprite.Sprite):
     def changespeed(self, x, y):
         self.change_x += x
         self.change_y += y
+    
+    # Change the speed of the player
+    def resetSpeed(self):
+        self.change_x = 0
+        self.change_y = 0
 
     # Find a new position for the player
     def update(self, walls):
@@ -543,6 +569,9 @@ def main():
     #difficulty Variable
     diff = ""
 
+    #Event variable
+    event_num = 0
+
     mList = ["ghost.png", "skeleton.png", "slime.png", "goblin.png", "zombie.png", "spider.png"]
     mImg = pygame.image.load(random.choice(mList))
     mImg = pygame.transform.scale(mImg, (mSize, mSize))
@@ -623,16 +652,23 @@ def main():
         powerup = powerImg.get_rect()
         powerup.topleft = (monster_x + 50, monster_y + 50)
 
+    # Set the initial time
+    start_time = time.time()
+    # Set the desired interval in seconds
+    interval = 20
+
     running = True
     while running:
         clock.tick(40)
 
-        #communication
+        # Check the elapsed time
+        current_time = time.time()
+        elapsed_time = current_time - start_time
         if(Player.direction != ""):
-            file1 = open("communication.txt", "w")
-            file1.write(Player.direction)
-            Player.direction = ""
-            file1.close()
+            # Start the file_writer thread
+            file_writer_thread = threading.Thread(target=file_writer)
+            file_writer_thread.start()
+            
 
         # getting the current player x and y
         player_x = player.rect.topleft[0]
@@ -667,9 +703,7 @@ def main():
                     player.changespeed(0, 5)
                 if event.key == pygame.K_p:
                     paused(screen)
-                if event.key == pygame.K_e:
-                    timedEvent(screen)
-                    
+
             if event.type == KEYUP:
                 if event.key == K_LEFT:
                     player.changespeed(5, 0)
@@ -682,6 +716,54 @@ def main():
                 if event.key == K_r and heals > 0:
                     pHealth = 100
                     heals -= 1
+            
+        if (elapsed_time >= interval):
+            print(f"Timer reached {interval} seconds!")
+                    
+            event_num = timedEvent(screen)
+
+            # Reset the player's movement
+            player.resetSpeed()
+
+            if event_num == 11:
+                print("Event 11")
+            
+            elif event_num == 12:
+                print("Event 12")
+                
+            elif event_num == 13:
+                print("Event 13")
+                
+            elif event_num == 21:
+                print("Event 21")
+                
+            elif event_num == 22:
+                print("Event 22")
+                
+            elif event_num == 23:
+                print("Event 23")
+                
+            elif event_num == 31:
+                print("Event 31")
+                
+            elif event_num == 32:
+                print("Event 32")
+                
+            elif event_num == 33:
+                print("Event 33")
+                
+            elif event_num == 41:
+                print("Event 41")
+                
+            elif event_num == 42:
+                print("Event 42")
+                
+            elif event_num == 43:
+                print("Event 43")
+                
+
+            # Reset the timer for the next interval
+            start_time = time.time()
 
         player.update(walls)
         walls = pygame.sprite.RenderPlain(generate_room(player.current_room))

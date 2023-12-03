@@ -3,6 +3,48 @@ import os
 import keyboard
 import time
 import subprocess
+import psutil
+import threading
+
+
+def measure_performance_before(duration_seconds):
+    cpu_percentages = []
+    memory_percentages = []
+
+    end_time = time.time() + duration_seconds
+
+    while time.time() < end_time:
+        # Get CPU usage
+        cpu_percentages.append(psutil.cpu_percent(interval=1))
+
+        # Get memory usage
+        memory_percentages.append(psutil.virtual_memory().percent)
+
+    # Calculate average CPU and memory usage
+    average_cpu = sum(cpu_percentages) / len(cpu_percentages)
+    average_memory = sum(memory_percentages) / len(memory_percentages)
+
+    return average_cpu, average_memory
+
+def measure_performance(duration_seconds, result):
+    cpu_percentages = []
+    memory_percentages = []
+
+    end_time = time.time() + duration_seconds
+
+    while time.time() < end_time:
+        # Get CPU usage
+        cpu_percentages.append(psutil.cpu_percent(interval=1))
+
+        # Get memory usage
+        memory_percentages.append(psutil.virtual_memory().percent)
+
+    # Calculate average CPU and memory usage
+    average_cpu = sum(cpu_percentages) / len(cpu_percentages)
+    average_memory = sum(memory_percentages) / len(memory_percentages)
+
+    result['average_cpu'] = average_cpu
+    result['average_memory'] = average_memory
 
 # Create a function to clear the screen
 def clear_screen():
@@ -31,7 +73,7 @@ def show_help():
     print("")
 # Create a function to draw the map
 def draw_map(edge, current_room, previous_moves, locations, level):
-    row = edge - 1
+    row = 4
     map_key = 'X'
 
     print('_.' * edge)
@@ -86,13 +128,18 @@ directions = ['U', 'D', 'L', 'R']
 
 time.sleep(1)
 current_room = 0
+print(f"Measuring performance for {10} seconds...")
+average_cpu, average_memory = measure_performance_before(10)
+
+print(f"Average CPU Usage: {average_cpu:.2f}%")
+print(f"Average Memory Usage: {average_memory:.2f}%")
 # Start the game loop
 if __name__ == "__main__":
 
     grid = []
     level = ''
-    grid = build_grid(5)
-    edge = 5
+    grid = build_grid(10)
+    edge = 10
 
     game_grid, boundary, difficulty = grid, edge, level
     starting_locations = get_locations(game_grid)
@@ -101,19 +148,27 @@ if __name__ == "__main__":
     players_moves = [current_room]
     draw_map(boundary, current_room, players_moves, starting_locations, difficulty)
 
-    while True:
+    # Initialize the result dictionary
+    performance_result = {'average_cpu': 0, 'average_memory': 0}
+
+    # Start measuring performance in a separate thread
+    performance_thread = threading.Thread(target=measure_performance, args=(10, performance_result))
+    performance_thread.start()
+
+    end = True
+    while end == True:
         data = ""
 
-        #communication
+        #checking file
         with open('communication.txt', 'r') as file:
             data = file.read()
 
+            #locking the file
             if data:
-                #print("Received: ", data)
-                with open('communication.txt', 'w') as clear_file:
-                    clear_file.write("paused")
-        time.sleep(1)
+                with open('communication.txt', 'w') as lock_file:
+                    lock_file.write("locked")
 
+        #Critical section
 
         # Check if arrow key events were triggered
         if data:
@@ -125,6 +180,9 @@ if __name__ == "__main__":
                 player_choice = "U"
             elif data == "d":
                 player_choice = "D"
+            elif data == "f":
+                end = False
+                break
             else:
                 continue  # Skip other key events
             clear_screen()
@@ -134,3 +192,13 @@ if __name__ == "__main__":
             players_moves.append(new_room)
             current_room = new_room
             draw_map(boundary, current_room, players_moves, starting_locations, difficulty)
+
+            #release lock
+            with open('communication.txt', 'w') as file:
+                pass
+
+    performance_thread.join()
+    # Access the performance results
+    print(f"Average CPU Usage: {performance_result['average_cpu']:.2f}%")
+    print(f"Average Memory Usage: {performance_result['average_memory']:.2f}%")
+
