@@ -131,8 +131,8 @@ current_room = 0
 print(f"Measuring performance for {10} seconds...")
 average_cpu, average_memory = measure_performance_before(10)
 
-print(f"Average CPU Usage: {average_cpu:.2f}%")
-print(f"Average Memory Usage: {average_memory:.2f}%")
+initial_cpu = f"Initial Average CPU Usage: {average_cpu:.2f}%"
+initial_mem = f"Initial Average Memory Usage: {average_memory:.2f}%"
 # Start the game loop
 if __name__ == "__main__":
 
@@ -199,6 +199,8 @@ if __name__ == "__main__":
 
     performance_thread.join()
     # Access the performance results
-    print(f"Average CPU Usage: {performance_result['average_cpu']:.2f}%")
-    print(f"Average Memory Usage: {performance_result['average_memory']:.2f}%")
+    print(initial_cpu)
+    print(initial_mem)
+    print(f"Final Average CPU Usage: {performance_result['average_cpu']:.2f}%")
+    print(f"Final Average Memory Usage: {performance_result['average_memory']:.2f}%")
 

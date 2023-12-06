@@ -196,19 +196,20 @@ def timedEvent(gameDisplay):
         
         pygame.display.update()
 
-        if option1_button:
-            print("Option 1 selected")
-            event_number = event_number + 1
-            waiting_for_input = False
-        elif option2_button:
-            print("Option 2 selected")
-            event_number = event_number + 2
-            waiting_for_input = False
-        elif option3_button:
-            print("Option 3 selected")
-            event_number = 0
-            ebent_number = event_number + 3
-            waiting_for_input = False
+        for event in pygame.event.get():
+            if event.type == KEYDOWN:
+                if event.key == pygame.K_1:
+                    print("Option 1 selected")
+                    event_number = event_number + 1
+                    waiting_for_input = False
+                elif event.key == pygame.K_2:
+                    print("Option 2 selected")
+                    event_number = event_number + 2
+                    waiting_for_input = False
+                elif event.key == pygame.K_3:
+                    print("Option 3 Selected")
+                    event_number = event_number + 3
+                    waiting_for_input = False
 
         pygame.display.update()
     return event_number
@@ -218,7 +219,7 @@ def difficulty(gameDisplay):
     gameDisplay.blit(bImg, (0, 0))
     messages = ["Choose the Difficulty"]
     random_message = random.choice(messages)
-    instructions = "Movement: <- ^ v -> \n Attack: G \n Heal: R \n Pause: P"
+    instructions = "Movement: <- ^ v -> \n Attack: Spacebar \n Heal: R \n Pause: P"
     smallText = pygame.font.Font(None, 30)
 
     #Difficulty Message
@@ -261,15 +262,17 @@ def difficulty(gameDisplay):
         
         pygame.display.update()
 
-        if option1_button:
-            diff = "1"
-            waiting_for_input = False
-        elif option2_button:
-            diff = "2"
-            waiting_for_input = False
-        elif option3_button:
-            diff = "3"
-            waiting_for_input = False
+        for event in pygame.event.get():
+            if event.type == KEYDOWN:
+                if event.key == pygame.K_1:
+                    diff = "1"
+                    waiting_for_input = False
+                elif event.key == pygame.K_2:
+                    diff = "2"
+                    waiting_for_input = False
+                elif event.key == pygame.K_3:
+                    diff = "3"
+                    waiting_for_input = False
 
         pygame.display.update()
     return diff
@@ -451,6 +454,9 @@ class Player(pygame.sprite.Sprite):
     #Room changed direction
     direction = ""
 
+    #for finishing the game
+    finish = ""
+
     # Constructor function
     def __init__(self, x, y, w, h, vel, scale_factor=3):
         # Call the parent's constructor
@@ -526,7 +532,8 @@ class Player(pygame.sprite.Sprite):
             self.current_room = self.current_room - 10
             Player.room_changed = True
             Player.direction = "u"
-
+        if(Player.finish == "f"):
+            Player.direction = "f"
 
 player_x, player_y = 350, 250
 
@@ -572,6 +579,9 @@ def main():
     #Event variable
     event_num = 0
 
+    #number of statues
+    statues_num = 0
+
     mList = ["ghost.png", "skeleton.png", "slime.png", "goblin.png", "zombie.png", "spider.png"]
     mImg = pygame.image.load(random.choice(mList))
     mImg = pygame.transform.scale(mImg, (mSize, mSize))
@@ -608,6 +618,7 @@ def main():
 
     if(diff == "1"):
         print("Easy Mode Selected")
+        heals = 4
         mSpeed = 0.70
         pHealth = 150
         
@@ -664,11 +675,12 @@ def main():
         # Check the elapsed time
         current_time = time.time()
         elapsed_time = current_time - start_time
-        if(Player.direction != ""):
+        
+        #HERE FILE COMMS
+        if(Player.direction != "" or Player.finish == "f"):
             # Start the file_writer thread
             file_writer_thread = threading.Thread(target=file_writer)
             file_writer_thread.start()
-            
 
         # getting the current player x and y
         player_x = player.rect.topleft[0]
@@ -714,7 +726,7 @@ def main():
                 if event.key == K_DOWN:
                     player.changespeed(0, -5)
                 if event.key == K_r and heals > 0:
-                    pHealth = 100
+                    pHealth += 100
                     heals -= 1
             
         if (elapsed_time >= interval):
@@ -726,49 +738,68 @@ def main():
             player.resetSpeed()
 
             if event_num == 11:
-                print("Event 11")
+                print("You go to investigate the sound")
+                if(player.current_room != 49):
+                    current_room = 49
+                    Player.room_changed = True
             
             elif event_num == 12:
-                print("Event 12")
+                print("You Waited for another sound")
                 
             elif event_num == 13:
-                print("Event 13")
+                print("You ignored the sound")
                 
             elif event_num == 21:
-                print("Event 21")
+                print("Game Over - You fell to your death!")
+                running = False
+                break
                 
             elif event_num == 22:
-                print("Event 22")
+                print("You ignored the hole")
                 
             elif event_num == 23:
-                print("Event 23")
+                print("You ignored the hole")
                 
             elif event_num == 31:
-                print("Event 31")
+                print("You drink the vial")
+                pHealth += 50
                 
             elif event_num == 32:
-                print("Event 32")
+                print("You throw it away")
+                pHealth -= 20
                 
             elif event_num == 33:
-                print("Event 33")
+                print("Keep the vial")
+                heals += 1
                 
             elif event_num == 41:
-                print("Event 41")
+                print("Destroy the Statue")
                 
             elif event_num == 42:
-                print("Event 42")
+                print("Pick the Statue")
+                pAttack += 30
+                statues_num += 1
+                if(statues_num == 3):
+                    print("Game Over - The power of the statues was to much to handle!")
+                    running = False
+                    break
+
                 
             elif event_num == 43:
-                print("Event 43")
-                
+                print("Ignore the Statue") 
+
+                #Spawn a monster or next monster that spawns is faster/harder to kill
+                mHealth = 150
+                mSpeed = 4
+
+                mDead = False
 
             # Reset the timer for the next interval
             start_time = time.time()
 
         player.update(walls)
+
         walls = pygame.sprite.RenderPlain(generate_room(player.current_room))
-        # Clear the screen and draw objects
-        # screen.fill(black)
 
         # Check for collision
         playerRect = pygame.Rect(player.rect.topleft[0], player.rect.topleft[1], pSize, pSize)
@@ -784,8 +815,8 @@ def main():
                     pHealth -= 10
                 mATimer = 0
             if pATimer >= pACooldown:
-                if keys[pygame.K_g]:
-                    mHealth -= 10
+                if keys[pygame.K_SPACE]:
+                    mHealth -= (10 + 0.2*pAttack)
                 pATimer = 0
             if pHealth <= 0:
                 print("Game Over - Player defeated!")
@@ -804,7 +835,7 @@ def main():
                     pHealth -= 1
                 chestATimer = 0
             if pATimer >= pACooldown:
-                if keys[pygame.K_g]:
+                if keys[pygame.K_SPACE]:
                     chestHealth -= 15
                 pATimer = 0
             if pHealth <= 0:
@@ -824,18 +855,21 @@ def main():
         if (Player.room_changed == True):
             mDead = False
             mHealth = 50
+            random_num = random.randint(1, 3)
             mImg = pygame.image.load(random.choice(mList))
             mImg = pygame.transform.scale(mImg, (mSize, mSize))
             monster_x = random.randint(0, W - mSize)
             monster_y = random.randint(0, H - mSize)
-            chestHealth = 10
-            chestImg = pygame.image.load(random.choice(chestList))
-            chestImg = pygame.transform.scale(mImg, (chestSize, chestSize))
-            chest_x = random.randint(0, W - chestSize)
-            chest_y = random.randint(0, H - chestSize)
+            if(random_num == 1):
+                chestDead = False
+                chestHealth = 10
+                chest_x = random.randint(0, W - chestSize)
+                chest_y = random.randint(0, H - chestSize)
 
         dragonRect = pygame.Rect(dragon_x, dragon_y, 200, 200)
-        if (player.current_room == 1):
+        if (player.current_room == 49):
+            interval = 100
+            Player.room_changed = False
             dImg = pygame.image.load("dragon.png")
             dImg = pygame.transform.scale(dImg, (200, 200))
             if not dDead:
@@ -854,11 +888,12 @@ def main():
                         pHealth -= 10
                     mATimer = 0
                 if pATimer >= pACooldown:
-                    if keys[pygame.K_g]:
-                        dHealth -= 10
+                    if keys[pygame.K_SPACE]:
+                        dHealth -= (10 + 0.2*pAttack)
                     pATimer = 0
                 if pHealth <= 0:
                     print("Game Over - Player defeated!")
+                    Player.finish = "f"
                     running = False
                 elif dHealth <= 0:
                     spawnPrincess()
@@ -868,7 +903,9 @@ def main():
             running = False
 
 
-        Player.room_changed = False
+        if(player.current_room != 49):
+            Player.room_changed = False
+
         # Draw everything
         screen.blit(bImg, (0, 0))
         screen.blit(pImg, (player.rect.topleft[0], player.rect.topleft[1]))
@@ -881,7 +918,7 @@ def main():
         if not mDead:
             screen.blit(mImg, (monster_x, monster_y))
             drawHealthBar(screen, monster_x, monster_y, mHealth, 50, mHColor)
-        if player.current_room == 1:
+        if player.current_room == 49:
             mDead = True
             screen.blit(drImg, (0, 0))
             screen.blit(pImg, (player.rect.topleft[0], player.rect.topleft[1]))
@@ -903,7 +940,7 @@ def main():
         if not mDead:
             screen.blit(mImg, (monster_x, monster_y))
             drawHealthBar(screen, monster_x, monster_y, mHealth, 50, mHColor)
-        if not chestDead:
+        if not chestDead and player.current_room != 49:
             screen.blit(chestImg, (chest_x, chest_y))
             drawHealthBar(screen, chest_x, chest_y, chestHealth, 10, chestHColor)
 
@@ -915,3 +952,9 @@ def main():
 # This calls the 'main' function when this script is executed
 if __name__ == "__main__":
     main()
+
+with open('communication.txt', 'r') as file:
+    data = file.read()
+
+    with open('communication.txt', 'w') as update_file:
+        update_file.write("f")
